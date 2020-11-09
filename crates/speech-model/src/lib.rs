@@ -6,18 +6,17 @@ pub struct State {
 
 impl State {
     pub fn handle_msg(&mut self, they_said: &str) -> Option<String> {
-        let they_said = they_said.to_lowercase();
-        let components: Vec<_> = they_said.split(|c: char| !c.is_alphanumeric()).collect();
+        let message = Message::from(they_said);
 
         match self.mode {
             Mode::Neutral => {
-                if components.contains(&"hello") || components.contains(&"hi") {
+                if message.contains_component(&"hello") || message.contains_component(&"hi") {
                     Some("Greetings!".to_string())
-                } else if components.contains(&"who") {
+                } else if message.contains_component(&"who") {
                     Some("Glad you asked! I’m robotti, your personal assistant.".to_string())
-                } else if components.contains(&"why") {
+                } else if message.contains_component("why") {
                     Some("Why not?".to_string())
-                } else if components.contains(&"reminder") {
+                } else if message.contains_component(&"reminder") {
                     self.mode = Mode::SettingReminder;
                     Some("What would you like me to remind you of?".to_string())
                 } else if they_said == "Initiating btot fight" {
@@ -47,5 +46,32 @@ enum Mode {
 impl Default for Mode {
     fn default() -> Self {
         Self::Neutral
+    }
+}
+
+struct Message {
+    lowercase: String,
+    components: Vec<String>,
+}
+
+impl Message {
+    fn contains_component(&self, component: &str) -> bool {
+        self.components.iter().any(|c| c == component)
+    }
+}
+
+impl From<&str> for Message {
+    fn from(s: &str) -> Self {
+        let lowercase = s.to_lowercase();
+
+        let components = lowercase
+            .split(|c: char| !c.is_alphanumeric())
+            .map(str::to_string)
+            .collect();
+
+        Self {
+            lowercase,
+            components,
+        }
     }
 }
