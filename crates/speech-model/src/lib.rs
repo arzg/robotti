@@ -8,25 +8,10 @@ impl State {
     pub fn handle_msg(&mut self, they_said: &str) -> Option<String> {
         let message = Message::from(they_said);
 
-        match self.mode {
-            Mode::Neutral => {
-                if (Rule::GREETING.applies_to)(self.mode, &message) {
-                    Some((Rule::GREETING.gen_reply)(self, &message))
-                } else if (Rule::WHO.applies_to)(self.mode, &message) {
-                    Some((Rule::WHO.gen_reply)(self, &message))
-                } else if (Rule::WHY.applies_to)(self.mode, &message) {
-                    Some((Rule::WHY.gen_reply)(self, &message))
-                } else if (Rule::CREATE_REMINDER.applies_to)(self.mode, &message) {
-                    Some((Rule::CREATE_REMINDER.gen_reply)(self, &message))
-                } else if (Rule::START_FIGHT.applies_to)(self.mode, &message) {
-                    Some((Rule::START_FIGHT.gen_reply)(self, &message))
-                } else {
-                    None
-                }
-            }
-            Mode::SettingReminder => Some((Rule::SET_REMINDER.gen_reply)(self, &message)),
-            Mode::Fight => Some((Rule::CONTINUE_FIGHT.gen_reply)(self, &message)),
-        }
+        RULES
+            .iter()
+            .find(|rule| (rule.applies_to)(self.mode, &message))
+            .map(|rule| (rule.gen_reply)(self, &message))
     }
 }
 
@@ -42,6 +27,16 @@ impl Default for Mode {
         Self::Neutral
     }
 }
+
+const RULES: &[Rule] = &[
+    Rule::GREETING,
+    Rule::WHO,
+    Rule::WHY,
+    Rule::CREATE_REMINDER,
+    Rule::START_FIGHT,
+    Rule::CONTINUE_FIGHT,
+    Rule::SET_REMINDER,
+];
 
 struct Rule {
     applies_to: fn(Mode, &Message) -> bool,
