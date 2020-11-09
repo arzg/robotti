@@ -1,0 +1,15 @@
+[package]
+authors = ["Aramis Razzaghipour <aramisnoah@gmail.com>"]
+edition = "2018"
+name = "robotti"
+version = "0.1.0"
+
+[dependencies]
+anyhow = "1.0.33"
+dotenv = "0.15.0"
+tokio = {version = "0.2.22", features = ["macros", "rt-threaded"]}
+
+[dependencies.serenity]
+default_features = false
+features = ["client", "cache", "gateway", "model", "rustls_backend"]
+version = "0.9.0-rc.4"
