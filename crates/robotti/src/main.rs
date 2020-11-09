@@ -35,7 +35,7 @@ impl EventHandler for Handler {
 
         let mut data = ctx.data.write().await;
         let state = data.get_mut::<StateWrapper>().unwrap();
-        if let Some(reply) = speech_model::handle_reply(state, &msg.content) {
+        if let Some(reply) = state.handle_msg(&msg.content) {
             if let Err(e) = msg.reply(ctx.http, reply).await {
                 eprintln!("Error: {}", e);
             }
