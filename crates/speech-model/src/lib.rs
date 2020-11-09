@@ -19,7 +19,7 @@ impl State {
 enum Mode {
     Neutral,
     SettingReminder,
-    Fight,
+    Fight { num_times_said_kil: u32 },
 }
 
 impl Default for Mode {
@@ -81,16 +81,38 @@ impl Rule {
     };
 
     const START_FIGHT: Self = Self {
-        applies_to: |mode, message| mode == Mode::Neutral && message.raw == "Initiating btot fight",
+        applies_to: |mode, message| {
+            mode == Mode::Neutral && message.raw == "Initiating btot fight."
+        },
         gen_reply: |state, _| {
-            state.mode = Mode::Fight;
+            state.mode = Mode::Fight {
+                num_times_said_kil: 0,
+            };
+
             "KIL!".to_string()
         },
     };
 
     const CONTINUE_FIGHT: Self = Self {
-        applies_to: |mode, _| mode == Mode::Fight,
-        gen_reply: |_, _| "KIL!".to_string(),
+        applies_to: |mode, _| matches!(mode, Mode::Fight { .. }),
+        gen_reply: |state, _| {
+            let num_times_said_kil = if let Mode::Fight {
+                ref mut num_times_said_kil,
+            } = state.mode
+            {
+                num_times_said_kil
+            } else {
+                unreachable!()
+            };
+
+            if *num_times_said_kil < 5 {
+                *num_times_said_kil += 1;
+            } else {
+                state.mode = Mode::Neutral;
+            }
+
+            "KIL!".to_string()
+        },
     };
 }
 
