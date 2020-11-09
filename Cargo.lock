@@ -825,6 +825,7 @@ dependencies = [
  "anyhow",
  "dotenv",
  "serenity",
+ "speech-model",
  "tokio",
 ]
 
@@ -954,6 +955,10 @@ dependencies = [
  "redox_syscall",
  "winapi 0.3.9",
 ]
+
+[[package]]
+name = "speech-model"
+version = "0.1.0"
 
 [[package]]
 name = "spin"
