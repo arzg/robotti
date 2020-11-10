@@ -8,10 +8,7 @@ impl State {
     pub fn handle_msg(&mut self, they_said: &str) -> Option<String> {
         let message = Message::from(they_said);
 
-        RULES
-            .iter()
-            .find(|rule| (rule.applies_to)(self.mode, &message))
-            .map(|rule| (rule.gen_reply)(self, &message))
+        RULES.iter().find_map(|rule| rule(self, &message))
     }
 }
 
@@ -29,91 +26,91 @@ impl Default for Mode {
 }
 
 const RULES: &[Rule] = &[
-    Rule::GREETING,
-    Rule::WHO,
-    Rule::WHY,
-    Rule::CREATE_REMINDER,
-    Rule::START_FIGHT,
-    Rule::CONTINUE_FIGHT,
-    Rule::SET_REMINDER,
+    greeting,
+    who,
+    why,
+    create_reminder,
+    start_fight,
+    continue_fight,
+    set_reminder,
 ];
 
-struct Rule {
-    applies_to: fn(Mode, &Message) -> bool,
-    gen_reply: fn(&mut State, &Message) -> String,
+type Rule = fn(&mut State, &Message) -> Option<String>;
+
+fn greeting(state: &mut State, message: &Message) -> Option<String> {
+    if state.mode != Mode::Neutral
+        || (!message.contains_component("hello") && !message.contains_component(&"hi"))
+    {
+        return None;
+    }
+
+    Some("Greeting".to_string())
 }
 
-impl Rule {
-    const GREETING: Self = Self {
-        applies_to: |mode, message| {
-            mode == Mode::Neutral && message.contains_component("hello")
-                || message.contains_component(&"hi")
-        },
-        gen_reply: |_, _| "Greeting".to_string(),
+fn who(state: &mut State, message: &Message) -> Option<String> {
+    if state.mode != Mode::Neutral || !message.contains_component("who") {
+        return None;
+    }
+
+    Some("Glad you asked! I’m robotti, your personal assistant.".to_string())
+}
+
+fn why(state: &mut State, message: &Message) -> Option<String> {
+    if state.mode != Mode::Neutral || !message.contains_component("why") {
+        return None;
+    }
+
+    Some("Why not?".to_string())
+}
+
+fn create_reminder(state: &mut State, message: &Message) -> Option<String> {
+    if state.mode != Mode::Neutral || !message.contains_component("reminder") {
+        return None;
+    }
+
+    state.mode = Mode::SettingReminder;
+
+    Some("What would you like me to remind you of?".to_string())
+}
+
+fn set_reminder(state: &mut State, message: &Message) -> Option<String> {
+    if state.mode != Mode::SettingReminder {
+        return None;
+    }
+
+    state.reminders.push(message.raw.to_string());
+    state.mode = Mode::Neutral;
+
+    Some("OK, I’ll remember that.".to_string())
+}
+
+fn start_fight(state: &mut State, message: &Message) -> Option<String> {
+    if state.mode != Mode::Neutral || message.raw != "Initiating btot fight." {
+        return None;
+    }
+
+    state.mode = Mode::Fight {
+        num_times_said_kil: 0,
     };
 
-    const WHO: Self = Self {
-        applies_to: |mode, message| mode == Mode::Neutral && message.contains_component("who"),
-        gen_reply: |_, _| "Glad you asked! I’m robotti, your personal assistant.".to_string(),
+    Some("KIL!".to_string())
+}
+
+fn continue_fight(state: &mut State, _: &Message) -> Option<String> {
+    let num_times_said_kil = match state.mode {
+        Mode::Fight {
+            ref mut num_times_said_kil,
+        } => num_times_said_kil,
+        _ => return None,
     };
 
-    const WHY: Self = Self {
-        applies_to: |mode, message| mode == Mode::Neutral && message.contains_component("why"),
-        gen_reply: |_, _| "Why not?".to_string(),
-    };
+    if *num_times_said_kil < 5 {
+        *num_times_said_kil += 1;
+    } else {
+        state.mode = Mode::Neutral;
+    }
 
-    const CREATE_REMINDER: Self = Self {
-        applies_to: |mode, message| mode == Mode::Neutral && message.contains_component("reminder"),
-        gen_reply: |state, _| {
-            state.mode = Mode::SettingReminder;
-            "What would you like me to remind you of?".to_string()
-        },
-    };
-
-    const SET_REMINDER: Self = Self {
-        applies_to: |mode, _| mode == Mode::SettingReminder,
-        gen_reply: |state, message| {
-            state.reminders.push(message.raw.to_string());
-            state.mode = Mode::Neutral;
-
-            "OK, I’ll remember that.".to_string()
-        },
-    };
-
-    const START_FIGHT: Self = Self {
-        applies_to: |mode, message| {
-            mode == Mode::Neutral && message.raw == "Initiating btot fight."
-        },
-        gen_reply: |state, _| {
-            state.mode = Mode::Fight {
-                num_times_said_kil: 0,
-            };
-
-            "KIL!".to_string()
-        },
-    };
-
-    const CONTINUE_FIGHT: Self = Self {
-        applies_to: |mode, _| matches!(mode, Mode::Fight { .. }),
-        gen_reply: |state, _| {
-            let num_times_said_kil = if let Mode::Fight {
-                ref mut num_times_said_kil,
-            } = state.mode
-            {
-                num_times_said_kil
-            } else {
-                unreachable!()
-            };
-
-            if *num_times_said_kil < 5 {
-                *num_times_said_kil += 1;
-            } else {
-                state.mode = Mode::Neutral;
-            }
-
-            "KIL!".to_string()
-        },
-    };
+    Some("KIL!".to_string())
 }
 
 struct Message<'a> {
