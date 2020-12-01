@@ -30,9 +30,10 @@ const RULES: &[Rule] = &[
     who,
     why,
     create_reminder,
+    set_reminder_value,
+    list_reminders,
     start_fight,
     continue_fight,
-    set_reminder,
 ];
 
 type Rule = fn(&mut State, &Message) -> Option<String>;
@@ -73,7 +74,7 @@ fn create_reminder(state: &mut State, message: &Message) -> Option<String> {
     Some("What would you like me to remind you of?".to_string())
 }
 
-fn set_reminder(state: &mut State, message: &Message) -> Option<String> {
+fn set_reminder_value(state: &mut State, message: &Message) -> Option<String> {
     if state.mode != Mode::SettingReminder {
         return None;
     }
@@ -82,6 +83,37 @@ fn set_reminder(state: &mut State, message: &Message) -> Option<String> {
     state.mode = Mode::Neutral;
 
     Some("OK, I’ll remember that.".to_string())
+}
+
+fn list_reminders(state: &mut State, message: &Message) -> Option<String> {
+    if state.mode != Mode::Neutral
+        || !message.contains_component("list")
+        || !message.contains("reminder")
+    {
+        return None;
+    }
+
+    let num_reminders = state.reminders.len();
+
+    if num_reminders == 0 {
+        return Some("You have no reminders".to_string());
+    }
+
+    let mut response = format!(
+        "You have {} {}:",
+        num_reminders,
+        if num_reminders == 1 {
+            "reminder"
+        } else {
+            "reminders"
+        }
+    );
+
+    for reminder in &state.reminders {
+        response.push_str(&format!("\n{}", reminder));
+    }
+
+    Some(response)
 }
 
 fn start_fight(state: &mut State, message: &Message) -> Option<String> {
@@ -119,6 +151,10 @@ struct Message<'a> {
 }
 
 impl Message<'_> {
+    fn contains(&self, s: &str) -> bool {
+        self.raw.contains(s)
+    }
+
     fn contains_component(&self, component: &str) -> bool {
         self.components.iter().any(|c| c == component)
     }
