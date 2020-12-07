@@ -35,10 +35,17 @@ impl EventHandler for Handler {
 
         let mut data = ctx.data.write().await;
         let state = data.get_mut::<StateWrapper>().unwrap();
+
+        let typing = ctx.http.start_typing(msg.channel_id.0);
+
         if let Some(reply) = state.handle_msg(&msg.content) {
             if let Err(e) = msg.reply(ctx.http, reply).await {
                 eprintln!("Error: {}", e);
             }
+        }
+
+        if let Ok(typing) = typing {
+            typing.stop();
         }
     }
 }
