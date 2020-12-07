@@ -13,7 +13,7 @@ async fn main() -> anyhow::Result<()> {
         .data
         .write()
         .await
-        .insert::<StateWrapper>(speech_model::State::default());
+        .insert::<StateWrapper>(speech_model::State::new()?);
 
     client.start().await?;
 

@@ -1,10 +1,28 @@
-#[derive(Default)]
+use oorandom::Rand32;
+use std::convert::{TryFrom, TryInto};
+
 pub struct State {
     mode: Mode,
     reminders: Vec<String>,
+    rng: Rand32,
 }
 
 impl State {
+    pub fn new() -> anyhow::Result<Self> {
+        Ok(Self {
+            mode: Mode::default(),
+            reminders: Vec::new(),
+            rng: {
+                let mut rand_bytes = [0; 8];
+
+                getrandom::getrandom(&mut rand_bytes)
+                    .map_err(|_| anyhow::anyhow!("failed to initialise RNG"))?;
+
+                Rand32::new(u64::from_be_bytes(rand_bytes))
+            },
+        })
+    }
+
     pub fn handle_msg(&mut self, they_said: &str) -> Option<String> {
         let message = Message::from(they_said);
 
@@ -34,6 +52,7 @@ const RULES: &[Rule] = &[
     list_reminders,
     start_fight,
     continue_fight,
+    joke,
 ];
 
 type Rule = fn(&mut State, &Message) -> Option<String>;
@@ -143,6 +162,23 @@ fn continue_fight(state: &mut State, _: &Message) -> Option<String> {
     }
 
     Some("KIL!".to_string())
+}
+
+fn joke(state: &mut State, message: &Message) -> Option<String> {
+    if state.mode != Mode::Neutral || !message.contains_component("joke") {
+        return None;
+    }
+
+    const JOKES: &str = include_str!("jokes");
+    let joke_lines: Vec<_> = JOKES.lines().collect();
+
+    let rand_idx = state
+        .rng
+        .rand_range(0..joke_lines.len().try_into().unwrap());
+
+    let random_joke = joke_lines[usize::try_from(rand_idx).unwrap()];
+
+    Some(random_joke.to_string())
 }
 
 struct Message<'a> {
