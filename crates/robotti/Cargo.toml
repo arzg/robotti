@@ -13,4 +13,4 @@ tokio = {version = "0.2.22", features = ["macros", "rt-threaded"]}
 [dependencies.serenity]
 default_features = false
 features = ["client", "cache", "gateway", "model", "rustls_backend"]
-version = "0.9.0-rc.4"
+version = "0.9.2"
