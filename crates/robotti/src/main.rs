@@ -39,7 +39,7 @@ impl EventHandler for Handler {
         let typing = ctx.http.start_typing(msg.channel_id.0);
 
         if let Some(reply) = state.handle_msg(&msg.content) {
-            if let Err(e) = msg.reply(ctx.http, reply).await {
+            if let Err(e) = msg.reply_ping(ctx.http, reply).await {
                 eprintln!("Error: {}", e);
             }
         }
