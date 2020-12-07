@@ -47,6 +47,7 @@ const RULES: &[Rule] = &[
     greeting,
     who,
     why,
+    ladder_collection,
     create_reminder,
     set_reminder_value,
     list_reminders,
@@ -81,6 +82,15 @@ fn why(state: &mut State, message: &Message) -> Option<String> {
     }
 
     Some("Why not?".to_string())
+}
+
+fn ladder_collection(state: &mut State, message: &Message) -> Option<String> {
+    if state.mode != Mode::Neutral || message.raw != "Thanks. I take pride in my ladder collection."
+    {
+        return None;
+    }
+
+    Some("It’s not that good tbh".to_string())
 }
 
 fn create_reminder(state: &mut State, message: &Message) -> Option<String> {
