@@ -69,7 +69,10 @@ fn greeting(state: &mut State, message: &Message) -> Option<String> {
 }
 
 fn who(state: &mut State, message: &Message) -> Option<String> {
-    if state.mode != Mode::Neutral || !message.contains_component("who") {
+    if state.mode != Mode::Neutral
+        || !message.contains_component("who")
+        || !message.contains_component("are")
+    {
         return None;
     }
 
